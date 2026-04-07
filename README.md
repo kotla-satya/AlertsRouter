@@ -25,7 +25,7 @@ A FastAPI service that routes incoming alerts to the right destination based on 
 
 
 ## How to build and run the project
-
+Checkout the project gh repo clone kotla-satya/AlertsRouter
 The service is available at after getting the docker up . `http://localhost:8080`.
 
 ## Docker

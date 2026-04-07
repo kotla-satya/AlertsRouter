@@ -6,5 +6,6 @@ __pycache__/
 *.pyd
 *.egg-info/
 .git/
+.idea
 *.idea/
 CLAUDE.md
