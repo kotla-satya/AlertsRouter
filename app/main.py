@@ -32,6 +32,15 @@ async def http_exception_handler(request, exc):
     return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
 
 
+@app.exception_handler(404)
+async def not_found_handler(request, exc):
+    detail = getattr(exc, "detail", "not found")
+    # Normalize FastAPI/Starlette's generic routing "Not Found" to lowercase
+    if detail == "Not Found":
+        detail = "not found"
+    return JSONResponse(status_code=404, content={"error": detail})
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     return JSONResponse(
