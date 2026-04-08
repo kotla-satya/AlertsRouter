@@ -12,4 +12,10 @@ router = APIRouter(prefix="/stats", tags=["stats"])
 
 @router.get("", status_code=200, response_model=StatsResponse)
 async def get_stats(db: Annotated[AsyncSession, Depends(get_db)]):
+    """
+    Return system-wide routing statistics.
+
+    Includes totals for processed, routed, suppressed, and unrouted alerts, broken down
+    by severity, by route, and by service.
+    """
     return await stats_service.get_stats(db)

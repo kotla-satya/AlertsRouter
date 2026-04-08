@@ -161,7 +161,7 @@ async def route_alert(db: AsyncSession, body: AlertCreate, dry_run: bool = False
                     f"Alert for service '{body.service}' suppressed on route '{primary.id}' "
                     f"for {primary.suppression_window_seconds}s"
                 ),
-                matched_routes=[],
+                matched_routes=[r.id for r in matched],
                 evaluation_details=build_evaluation_details(len(all_routes), len(matched), True),
             )
         else:

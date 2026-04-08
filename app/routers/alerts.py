@@ -15,6 +15,15 @@ async def submit_alert(
     body: AlertCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
+    """
+    Submit an alert for routing and persist the result.
+
+    The alert is evaluated against all active routing configs. The highest-priority
+    matching route becomes `routed_to`. If the primary route has a suppression window
+    active for the same service, the alert is suppressed (`suppressed: true`) and no
+    new suppression record is written. `matched_routes` lists every route whose
+    conditions matched, regardless of suppression.
+    """
     return await alerts_service.route_alert(db, body)
 
 
@@ -23,21 +32,31 @@ async def get_alert(
     alert_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
+    """
+    Return the routing result for a previously submitted alert.
+
+    Returns `{"error": "alert not found"}` with 404 if the ID does not exist.
+    """
     response = await alerts_service.get_alert_response(db, alert_id)
     if response is None:
-        raise HTTPException(status_code=404, detail={"error": "alert not found"})
+        raise HTTPException(status_code=404, detail="alert not found")
     return response
 
 
 @router.get("", status_code=200, response_model=AlertsListResponse)
 async def list_alerts(
     db: Annotated[AsyncSession, Depends(get_db)],
-    service: str | None = Query(default=None),
-    severity: str | None = Query(default=None),
-    routed: bool | None = Query(default=None),
-    suppressed: bool | None = Query(default=None),
+    service: str | None = Query(default=None, description="Filter by exact service name"),
+    severity: str | None = Query(default=None, description="Filter by severity (`critical`, `warning`, `info`)"),
+    routed: bool | None = Query(default=None, description="Filter by whether the alert was dispatched (`true`) or suppressed (`false`)"),
+    suppressed: bool | None = Query(default=None, description="Filter by suppression status"),
 ):
-    result = await alerts_service.list_alert_responses(db, service, severity, routed, suppressed)
-    if result.total == 0:
-        raise HTTPException(status_code=404, detail={"error": "alert not found"})
-    return result
+    """
+    List alert routing results with optional filters. All filters are optional and combined with AND.
+
+    Returns all matching alerts in a single response — there is no pagination.
+    An empty result set returns `{"alerts": [], "total": 0}` with 200.
+
+    Note: `routed=false` matches alerts that were suppressed (matched a route but not dispatched).
+    """
+    return await alerts_service.list_alert_responses(db, service, severity, routed, suppressed)

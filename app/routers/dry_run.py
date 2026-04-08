@@ -15,4 +15,11 @@ async def dry_run_alert(
     body: AlertCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
+    """
+    Evaluate routing logic for an alert without persisting any state.
+
+    Same request and response format as `POST /alerts`. Suppression checks read existing
+    suppression records but no new records are written, so repeated dry-run calls do not
+    affect live suppression windows or statistics.
+    """
     return await alerts_service.dry_run_route_alert(db, body)

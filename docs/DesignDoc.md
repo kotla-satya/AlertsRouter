@@ -73,6 +73,12 @@ Response (200 OK):
 - **DELETE /routes/{id}**
 Delete a routing configuration.
 Response (200 OK):
+```JSON
+{
+"id": "route-1",
+"deleted": true
+}
+```
 Return 404 if not found: {"error": "route not found"} .
 
 

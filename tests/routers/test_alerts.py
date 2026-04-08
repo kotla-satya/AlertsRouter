@@ -105,7 +105,7 @@ async def test_submit_alert_suppressed(client: AsyncClient):
     assert body["suppressed"] is True
     assert body["routed_to"]["route_id"] == "route-1"
     assert body["routed_to"]["target"]["type"] == "slack"
-    assert body["matched_routes"] == []
+    assert body["matched_routes"] == ["route-1"]
     assert body["suppression_reason"] is not None
     assert body["evaluation_details"]["suppression_applied"] is True
 
@@ -167,7 +167,7 @@ async def test_suppression_window_border(
     assert body["routed_to"]["route_id"] == "route-border"  # always set (routed or suppressed)
     if expect_suppressed:
         assert body["suppression_reason"] is not None
-        assert body["matched_routes"] == []
+        assert "route-border" in body["matched_routes"]
     else:
         assert body["suppression_reason"] is None
         assert "route-border" in body["matched_routes"]
@@ -206,7 +206,7 @@ async def test_get_alert_by_id(client: AsyncClient):
 async def test_get_alert_by_id_not_found(client: AsyncClient):
     resp = await client.get("/alerts/nonexistent")
     assert resp.status_code == 404
-    assert resp.json()["detail"] == {"error": "alert not found"}
+    assert resp.json() == {"error": "alert not found"}
 
 
 # ---------------------------------------------------------------------------
@@ -285,8 +285,10 @@ async def test_get_alerts_combined_filter(client: AsyncClient):
 
 async def test_get_alerts_empty_result(client: AsyncClient):
     resp = await client.get("/alerts?service=nonexistent-service")
-    assert resp.status_code == 404
-    assert resp.json()["detail"] == {"error": "alert not found"}
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 0
+    assert body["alerts"] == []
 
 
 # ---------------------------------------------------------------------------

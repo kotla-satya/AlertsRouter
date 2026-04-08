@@ -92,6 +92,25 @@ curl -X POST http://localhost:8080/routes \
 curl http://localhost:8080/routes
 ```
 
+**Create a route with active hours** (only route during business hours in a specific timezone):
+```bash
+curl -X POST http://localhost:8080/routes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "route-business-hours",
+    "conditions": {"severity": ["warning"]},
+    "target": {"type": "slack", "channel": "#alerts"},
+    "priority": 5,
+    "active_hours": {
+      "start": "09:00",
+      "end": "17:00",
+      "timezone": "America/New_York"
+    }
+  }'
+```
+
+> **Note:** `active_hours.timezone` is optional and defaults to `"UTC"` when omitted. Accepts any valid IANA timezone name (e.g. `"America/New_York"`, `"Asia/Kolkata"`). Overnight windows are supported (e.g. `start: "22:00"`, `end: "06:00"`).
+
 **Delete a route:**
 ```bash
 curl -X DELETE http://localhost:8080/routes/route-critical-slack
@@ -134,6 +153,8 @@ curl http://localhost:8080/alerts/alert-001
 curl "http://localhost:8080/alerts?service=payment-api&severity=critical&routed=true&suppressed=false"
 ```
 
+> **Note:** `GET /alerts` returns all matching alerts in a single response. There is no pagination — callers should apply filters to narrow results.
+
 ---
 
 ### Dry Run
@@ -174,6 +195,37 @@ Clear all data from the database (alerts, routing configs, suppressions).
 curl -X POST http://localhost:8080/reset
 # Response: {"status": "ok"}
 ```
+
+## Error Responses
+
+All errors use a consistent `{"error": ...}` envelope:
+
+| Scenario | Status | Body |
+|----------|--------|------|
+| Validation failure | `400` | `{"error": [{"type": "...", "loc": [...], "msg": "..."}]}` |
+| Resource not found | `404` | `{"error": "route not found"}` / `{"error": "alert not found"}` |
+| Database error | `500` | `{"error": "database error"}` |
+
+**Example — invalid field:**
+```json
+{
+  "error": [
+    {
+      "type": "literal_error",
+      "loc": ["body", "severity"],
+      "msg": "Input should be 'critical', 'warning' or 'info'",
+      "input": "debug"
+    }
+  ]
+}
+```
+
+**Example — not found:**
+```json
+{"error": "alert not found"}
+```
+
+---
 
 ## Authentication
 

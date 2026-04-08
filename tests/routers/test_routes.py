@@ -74,7 +74,7 @@ async def test_delete_route(client: AsyncClient):
 
     resp = await client.delete("/routes/route-1")
     assert resp.status_code == 200
-    assert resp.json() == {}
+    assert resp.json() == {"id": "route-1", "deleted": True}
 
     list_resp = await client.get("/routes")
     assert list_resp.json() == []
@@ -83,7 +83,7 @@ async def test_delete_route(client: AsyncClient):
 async def test_delete_route_not_found(client: AsyncClient):
     resp = await client.delete("/routes/nonexistent")
     assert resp.status_code == 404
-    assert resp.json() == {"detail": "route not found"}
+    assert resp.json() == {"error": "route not found"}
 
 
 # --- Validation (400) tests ---

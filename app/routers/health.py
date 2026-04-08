@@ -12,6 +12,13 @@ router = APIRouter(tags=["health"])
 
 @router.get("/health")
 async def health(db: Annotated[AsyncSession, Depends(get_db)]):
+    """
+    Check service health.
+
+    Returns `{"status": "ok", "database": "ok"}` when healthy.
+    Returns `{"status": "degraded", "database": "unreachable"}` with 503 if the database
+    cannot be reached.
+    """
     try:
         await db.execute(text("SELECT 1 FROM routing_configs LIMIT 1"))
         db_status = "ok"

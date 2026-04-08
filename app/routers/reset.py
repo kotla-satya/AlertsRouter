@@ -11,4 +11,9 @@ router = APIRouter(prefix="/reset", tags=["reset"])
 
 @router.post("", status_code=200)
 async def reset(db: Annotated[AsyncSession, Depends(get_db)]):
+    """
+    Delete all data from the database — alerts, routing configs, and suppression records.
+
+    Intended for testing and development. Returns `{"status": "ok"}` on success.
+    """
     return await reset_service.reset_all(db)
