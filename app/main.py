@@ -41,6 +41,11 @@ async def not_found_handler(request, exc):
     return JSONResponse(status_code=404, content={"error": detail})
 
 
+@app.exception_handler(405)
+async def method_not_allowed_handler(request, exc):
+    return JSONResponse(status_code=405, content={"error": "method not allowed"})
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     return JSONResponse(
