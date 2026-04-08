@@ -1,3 +1,59 @@
+### ERD — Database Schema
+
+```
+┌─────────────────────────────────────────────┐
+│                   alerts                    │
+├──────────────────┬──────────────────────────┤
+│ id               │ VARCHAR(255)  PK          │
+│ severity         │ VARCHAR(20)   NOT NULL    │
+│ service          │ VARCHAR(255)  NOT NULL    │
+│ group            │ VARCHAR(255)  NOT NULL    │
+│ description      │ TEXT          NULL        │
+│ timestamp        │ TIMESTAMPTZ   NOT NULL    │
+│ labels           │ JSON          NULL        │
+│ suppressed       │ BOOLEAN       NOT NULL    │
+│ is_routed        │ BOOLEAN       NOT NULL    │
+│ routing_result   │ JSON          NULL        │
+│ created_at       │ TIMESTAMPTZ   NOT NULL    │
+│ updated_at       │ TIMESTAMPTZ   NOT NULL    │
+└──────────────────┴──────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│               routing_configs               │
+├──────────────────┬──────────────────────────┤
+│ id               │ VARCHAR(255)  PK          │
+│ conditions       │ JSON          NOT NULL    │
+│ target           │ JSON          NOT NULL    │
+│ priority         │ INTEGER       NOT NULL    │
+│ suppression_     │ INTEGER       NOT NULL    │
+│   window_seconds │               default 0  │
+│ version          │ INTEGER       NOT NULL    │
+│ active_hours     │ JSON          NULL        │
+│ created_at       │ TIMESTAMPTZ   NOT NULL    │
+│ updated_at       │ TIMESTAMPTZ   NOT NULL    │
+└──────────────────┴──────────────────────────┘
+         │                    │
+         │ route_id           │ route_id
+         ▼                    │
+┌─────────────────────────────────────────────┐
+│              route_suppressions             │
+├──────────────────┬──────────────────────────┤
+│ route_id         │ VARCHAR(255)  PK (comp.)  │  ◄── logical ref to routing_configs.id
+│ service          │ VARCHAR(255)  PK (comp.)  │
+│ last_routed_at   │ TIMESTAMPTZ   NOT NULL    │
+└──────────────────┴──────────────────────────┘
+```
+
+**Notes**
+
+- No foreign key constraints are enforced at the DB level. `route_suppressions.route_id` logically references `routing_configs.id`; the application cleans up suppression records when a route is deleted.
+- `alerts.routing_result` stores the full `AlertRoutingResponse` JSON snapshot so GET /alerts can reconstruct the response without re-evaluating rules.
+- `routing_configs.conditions` and `routing_configs.target` are JSON blobs matching the `RoutingConfigCondition` and `RoutingConfigTarget` Pydantic schemas respectively.
+- `route_suppressions` uses a composite primary key `(route_id, service)` — one row per route+service pair, updated in place on each successful routing event.
+- `routing_configs.version` increments on every upsert, enabling optimistic concurrency detection if needed in future.
+
+---
+
 ### Data Model
 
 #### **Alert**
